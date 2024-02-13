@@ -600,6 +600,9 @@ typedef struct mi_stats_s {
   mi_stat_counter_t normal_count;
   mi_stat_counter_t huge_count;
   mi_stat_counter_t large_count;
+  mi_stat_counter_t normal_memory;
+  mi_stat_counter_t large_page_memory;
+  mi_stat_counter_t huge_page_memory;
 #if MI_STAT>1
   mi_stat_count_t normal_bins[MI_BIN_HUGE+1];
 #endif

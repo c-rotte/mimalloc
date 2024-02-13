@@ -43,7 +43,7 @@ int _mi_prim_free(void* addr, size_t size );
 // `is_zero` is set to true if the memory was zero initialized (as on most OS's)
 // pre: !commit => !allow_large
 //      try_alignment >= _mi_os_page_size() and a power of 2
-int _mi_prim_alloc(size_t size, size_t try_alignment, bool commit, bool allow_large, bool* is_large, bool* is_zero, void** addr);
+int _mi_prim_alloc(size_t size, size_t try_alignment, bool commit, bool allow_large, bool* is_large, bool* is_huge, bool* is_zero, void** addr);
 
 // Commit memory. Returns error code or 0 on success.
 // For example, on Linux this would make the memory PROT_READ|PROT_WRITE.
@@ -67,7 +67,7 @@ int _mi_prim_protect(void* addr, size_t size, bool protect);
 // `is_zero` is set to true if the memory was zero initialized (as on most OS's)
 // pre: size > 0  and a multiple of 1GiB.
 //      numa_node is either negative (don't care), or a numa node number.
-int _mi_prim_alloc_huge_os_pages(void* hint_addr, size_t size, int numa_node, bool* is_zero, void** addr);
+int _mi_prim_alloc_huge_os_pages(void* hint_addr, size_t size, int numa_node, bool* is_zero, bool* is_large, bool* is_huge, void** addr);
 
 // Return the current NUMA node
 size_t _mi_prim_numa_node(void);
