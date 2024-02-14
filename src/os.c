@@ -213,9 +213,9 @@ static void* mi_os_prim_alloc(size_t size, size_t try_alignment, bool commit, bo
                else { mi_track_mem_undefined(p,size); }
       #endif
     }
-    if (is_large) {
+    if (*is_large) {
       _mi_stat_counter_increase(&stats->large_page_memory, size);
-    } else if (is_huge) {
+    } else if (*is_huge) {
       _mi_stat_counter_increase(&stats->huge_page_memory, size);
     } else {
       _mi_stat_counter_increase(&stats->normal_memory, size);
