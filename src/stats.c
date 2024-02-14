@@ -122,8 +122,9 @@ static void mi_stats_add(mi_stats_t* stats, const mi_stats_t* src) {
   mi_stat_counter_add(&stats->large_count, &src->large_count, 1);
 
   mi_stat_counter_add(&stats->large_page_memory, &src->large_page_memory, 1);
-  mi_stat_counter_add(&stats->huge_page_memory, &src->huge_page_memory, 1);
-  mi_stat_counter_add(&stats->normal_memory, &src->normal_memory, 1);
+  mi_stat_counter_add(&stats->huge_page_2m_memory, &src->huge_page_2m_memory, 1);
+  mi_stat_counter_add(&stats->huge_page_1g_memory, &src->huge_page_1g_memory, 1);
+  mi_stat_counter_add(&stats->normal_page_memory, &src->normal_page_memory, 1);
 #if MI_STAT>1
   for (size_t i = 0; i <= MI_BIN_HUGE; i++) {
     if (src->normal_bins[i].allocated > 0 || src->normal_bins[i].freed > 0) {
@@ -352,9 +353,10 @@ static void _mi_stats_print(mi_stats_t* stats, mi_output_fun* out0, void* arg0) 
   mi_stat_print(&stats->threads, "threads", -1, out, arg);
   mi_stat_counter_print_avg(&stats->searches, "searches", out, arg);
   _mi_fprintf(out, arg, "%10s: %5zu\n", "numa nodes", _mi_os_numa_node_count());
-  mi_stat_counter_print(&stats->normal_memory, "normal_memory", out, arg);
+  mi_stat_counter_print(&stats->normal_page_memory, "normal_memory", out, arg);
   mi_stat_counter_print(&stats->large_page_memory, "large_page_memory", out, arg);
-  mi_stat_counter_print(&stats->huge_page_memory, "huge_page_memory", out, arg);
+  mi_stat_counter_print(&stats->huge_page_2m_memory, "huge_page_2m_memory", out, arg);
+  mi_stat_counter_print(&stats->huge_page_1g_memory, "huge_page_1g_memory", out, arg);
 
   size_t elapsed;
   size_t user_time;
