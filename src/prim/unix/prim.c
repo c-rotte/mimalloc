@@ -125,6 +125,8 @@ static bool unix_detect_overcommit(void) {
   return os_overcommit;
 }
 
+bool DISALLOW_1G_PAGES = false;
+
 void _mi_prim_mem_init( mi_os_mem_config_t* config ) {
   long psize = sysconf(_SC_PAGESIZE);
   if (psize > 0) {
@@ -135,6 +137,12 @@ void _mi_prim_mem_init( mi_os_mem_config_t* config ) {
   config->has_overcommit = unix_detect_overcommit();
   config->must_free_whole = false;    // mmap can free in parts
   config->has_virtual_reserve = true; // todo: check if this true for NetBSD?  (for anonymous mmap with PROT_NONE)
+
+  const char* DISALLOW_1G_PAGES_NAME = "MIMALLOC_DISALLOW_1G_PAGES";
+  char* value = getenv(DISALLOW_1G_PAGES_NAME);
+  if (value != NULL) {
+    DISALLOW_1G_PAGES = strcmp(value, "1") == 0;
+  }
 }
 
 
@@ -276,8 +284,10 @@ static void* unix_mmap(void* addr, size_t size, size_t try_alignment, int protec
       #endif
       if (large_only || lflags != flags) {
         // try large OS page allocation
-        *is_huge_1g = true;
-        p = unix_mmap_prim(addr, size, try_alignment, protect_flags, lflags, lfd);
+        if (!DISALLOW_1G_PAGES) {
+          *is_huge_1g = true;
+          p = unix_mmap_prim(addr, size, try_alignment, protect_flags, lflags, lfd);
+        }
         #ifdef MAP_HUGE_1GB
         if (p == NULL && (lflags & MAP_HUGE_1GB) != 0) {
           mi_huge_pages_available = false; // don't try huge 1GiB pages again

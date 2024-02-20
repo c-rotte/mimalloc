@@ -233,7 +233,8 @@ static void* mi_os_prim_alloc_aligned(size_t size, size_t alignment, bool commit
   mi_assert_internal(alignment >= _mi_os_page_size() && ((alignment & (alignment - 1)) == 0));
   mi_assert_internal(size > 0 && (size % _mi_os_page_size()) == 0);
   mi_assert_internal(is_large != NULL);
-  mi_assert_internal(is_huge != NULL);
+  mi_assert_internal(is_huge_2m != NULL);
+  mi_assert_internal(is_huge_1g != NULL);
   mi_assert_internal(is_zero != NULL);
   mi_assert_internal(base != NULL);
   if (!commit) allow_large = false;
