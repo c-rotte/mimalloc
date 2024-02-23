@@ -125,7 +125,9 @@ static bool unix_detect_overcommit(void) {
   return os_overcommit;
 }
 
-bool DISALLOW_1G_PAGES = false;
+bool ALLOW_2M_PERSISTENT_PAGES = true;
+bool ALLOW_1G_PERSISTENT_PAGES = true;
+bool ALLOW_THP_PAGES = true;
 
 void _mi_prim_mem_init( mi_os_mem_config_t* config ) {
   long psize = sysconf(_SC_PAGESIZE);
@@ -138,11 +140,24 @@ void _mi_prim_mem_init( mi_os_mem_config_t* config ) {
   config->must_free_whole = false;    // mmap can free in parts
   config->has_virtual_reserve = true; // todo: check if this true for NetBSD?  (for anonymous mmap with PROT_NONE)
 
-  const char* DISALLOW_1G_PAGES_NAME = "MIMALLOC_DISALLOW_1G_PAGES";
+  const char* DISALLOW_1G_PAGES_NAME = "MIMALLOC_ALLOW_2M_PERSISTENT_PAGES";
   char* value = getenv(DISALLOW_1G_PAGES_NAME);
-  if (value != NULL) {
-    DISALLOW_1G_PAGES = strcmp(value, "1") == 0;
+  if (value != NULL && strcmp(value, "0") == 0) {
+    ALLOW_2M_PERSISTENT_PAGES = false;
   }
+
+  const char* ALLOW_1G_PERSISTENT_PAGES_NAME = "MIMALLOC_ALLOW_1G_PERSISTENT_PAGES";
+  value = getenv(ALLOW_1G_PERSISTENT_PAGES_NAME);
+  if (value != NULL && strcmp(value, "0") == 0) {
+    ALLOW_1G_PERSISTENT_PAGES = false;
+  }
+
+  const char* ALLOW_THP_PAGES_NAME = "MIMALLOC_ALLOW_THP_PAGES";
+  value = getenv(ALLOW_THP_PAGES_NAME);
+  if (value != NULL && strcmp(value, "0") == 0) {
+    ALLOW_THP_PAGES = false;
+  }
+
 }
 
 
@@ -284,12 +299,12 @@ static void* unix_mmap(void* addr, size_t size, size_t try_alignment, int protec
       #endif
       if (large_only || lflags != flags) {
         // try large OS page allocation
-        if (!DISALLOW_1G_PAGES) {
+        if (ALLOW_1G_PERSISTENT_PAGES) {
           *is_huge_1g = true;
           p = unix_mmap_prim(addr, size, try_alignment, protect_flags, lflags, lfd);
         }
         #ifdef MAP_HUGE_1GB
-        if (p == NULL && (lflags & MAP_HUGE_1GB) != 0) {
+        if (p == NULL && (lflags & MAP_HUGE_1GB) != 0 && ALLOW_2M_PERSISTENT_PAGES) {
           mi_huge_pages_available = false; // don't try huge 1GiB pages again
           _mi_warning_message("unable to allocate huge (1GiB) page, trying large (2MiB) pages instead (errno: %i)\n", errno);
           lflags = ((lflags & ~MAP_HUGE_1GB) | MAP_HUGE_2MB);
@@ -318,7 +333,7 @@ static void* unix_mmap(void* addr, size_t size, size_t try_alignment, int protec
       // in that case -- in particular for our large regions (in `memory.c`).
       // However, some systems only allow THP if called with explicit `madvise`, so
       // when large OS pages are enabled for mimalloc, we call `madvise` anyways.
-      if (allow_large && _mi_os_use_large_page(size, try_alignment)) {
+      if (allow_large && _mi_os_use_large_page(size, try_alignment) && ALLOW_THP_PAGES) {
         if (unix_madvise(p, size, MADV_HUGEPAGE) == 0) {
           *is_large = true; // possibly
         };
