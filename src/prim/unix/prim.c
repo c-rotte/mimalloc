@@ -333,7 +333,7 @@ static void* unix_mmap(void* addr, size_t size, size_t try_alignment, int protec
       // in that case -- in particular for our large regions (in `memory.c`).
       // However, some systems only allow THP if called with explicit `madvise`, so
       // when large OS pages are enabled for mimalloc, we call `madvise` anyways.
-      if (allow_large && _mi_os_use_large_page(size, try_alignment) && ALLOW_THP_PAGES) {
+      if (ALLOW_THP_PAGES) {
         if (unix_madvise(p, size, MADV_HUGEPAGE) == 0) {
           *is_large = true; // possibly
         };
